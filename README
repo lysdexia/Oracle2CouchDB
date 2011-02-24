@@ -1,0 +1,22 @@
+AUTHOR    : Doug Shawhan
+COPYRIGHT : 2011
+FILENAME  : Oracle2CouchDB 
+LICENSE   : GPL2
+http://www.gnu.org/licenses/gpl-2.0.html
+
+DESCRIPTION: Copy an oracle table into a couchdb database
+REQUIRES: python > 2.4 <3.0, cx_Oracle, couchdb
+
+USAGE: Oracle2CouchDB
+
+Edit the o2c.ini file, in the [oracle] section, supply your oracle
+authentication values, the oracle table to be cloned and an optional
+larger cursor_arraysize value. (A larger arraysize will often be 
+advantageous when using fetchmany())
+supply corresponding data for couchdb in the [couch] section
+
+Future versions may allow user to enter all this on the command line.
+For right now I suggest importing OraSuck and CouchBlow into a seperate
+script. :-)
+
+Oracle2CouchDB attempts to convert DATE objects to datetime.datetime.isoformat.
