@@ -20,3 +20,7 @@ For right now I suggest importing OraSuck and CouchBlow into a seperate
 script. :-)
 
 Oracle2CouchDB attempts to convert DATE objects to datetime.datetime.isoformat.
+This is a slightly improved version of the examples I posted at
+http://wiki.apache.org/couchdb/DumpOracleDbToCouchDbPython a while back.
+
+Have fun!
