@@ -20,7 +20,17 @@ For right now I suggest importing OraSuck and CouchBlow into a seperate
 script. :-)
 
 Oracle2CouchDB attempts to convert DATE objects to datetime.datetime.isoformat.
-This is a slightly improved version of the examples I posted at
-http://wiki.apache.org/couchdb/DumpOracleDbToCouchDbPython a while back.
+
+Also included is a pretty dirty script that I made for the CouchDB wiki:
+    http://wiki.apache.org/couchdb/DumpOracleDbToCouchDbPython
+
+This one allows you to use unique values in an oracle table to create a CouchDB
+database. It differs from the wiki version in that if you have a DATE object as
+your unique key, the script will convert it to isoformat, since it makes sorting
+and writing javascript views much simpler.
+
+In my experience, I have found that either one works pretty well, but the nature
+of converting from SQL tables it's generally okay to just let couchdb assign the
+key. YMMV.
 
 Have fun!
