@@ -1,0 +1,102 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+import couchdb, cx_Oracle, ConfigParser, os, datetime
+
+# Convert a list of (sql tables, unique identifiers) into couchDB documents
+# Simply figure out which db you wish to import from, and a series of tables,
+# with unique fields you'd like to have them
+# indexed by, put them into the list of tuples below and let fly.
+# This is pretty quick-and-dirty and I don't reccomend it for any sort of
+# production anything at all! :-)
+# If your unique identifier is a date object, we'll convert to isoformat
+# Should work for any db api 2 compliant sql database.
+# Script guaranteed 100% slower than christmas.
+
+# name of your new couchdb database
+db_name = 'mydatabase'
+
+table_names = [('TABLE_NAME0', 'UNIQUE_FIELD'),
+                ('TABLE_NAME1', 'UNIQUE_FIELD'),
+                ('TABLE_NAME2', 'UNIQUE_FIELD')]
+
+class GrabbyMitts(object):
+    def __init__(self, db_name):
+
+        # oracle connection
+        self.connection = cx_Oracle.Connection("scott/tiger@foobar")
+
+        # couchdb location
+        self.couch = couchdb.Server("http://localhost:5984/")
+        try:
+            self.db = self.couch.create(db_name)
+        except:
+            self.db = self.couch[db_name]
+
+    def description(self):
+        # get a description of a given table
+        # returns the "header" information in list
+        query = "select * from %s where 1=0"%self.table_name
+        cursor = cx_Oracle.Cursor(self.connection)
+        cursor.execute(query)
+        description = [i[0] for i in cursor.description]
+        cursor.close()
+        return description
+
+    def uniques(self):
+        # unique value in sql table to create couchdb document ID
+        cursor = cx_Oracle.Cursor(self.connection)
+        query = "select %s from %s"%(self.mykey, self.table_name)
+        cursor.execute(query)
+        myuniques = [i[0] for i in cursor.fetchall() if i[0]]
+        cursor.close()
+        return myuniques
+
+    def updateCouch(self, table_and_key):
+        # populate or update couchdb documents using sql table and unique identifier. If you don't want to overwrite your existing docs, adjust accordingly below.
+        self.table_name, self.mykey = table_and_key
+        cursor = cx_Oracle.Cursor(self.connection)
+        documents = []
+        header = self.description()
+
+        query = """
+            select %s
+            from %s
+            where %s=:myunique"""""%(", ".join(header),
+                                    self.table_name,
+                                    self.mykey)
+        cursor.prepare(query)
+
+        for myunique in [{"myunique": i} for i in self.uniques()]:
+            cursor.execute(None, myunique)
+            entry = dict([(k, v) for k, v in zip(header, cursor.fetchone())])
+            # mop up datetime objects as they occour, since json cries foul.
+            # will probably need to convert to unix epochal time
+            for k in entry:
+                if isinstance(entry[k], datetime.datetime):
+                    entry[k] = "%s"%entry[k]
+
+            # if our key is a datetime object, convert to isoformat, since
+            # javascript likes it best, thus making views and sorting that much
+            # simpler
+            key = myuniqe['myuniqe']
+                if isinstance(key, datetime.datetime):
+                    key = key.isoformat()
+                else:
+                    key = str(key)
+
+            # if we already have a particular key, go ahead and over write it
+            # You may not want this behavior!
+            if key not in self.db:
+                self.db[key] = entry
+            else:
+                doc = self.db[key]
+                for k in entry:
+                    doc[k] = entry[k]
+                self.db[key] = doc
+
+        cursor.close()
+
+if __name__ == "__main__":
+    gm = GrabbyMitts(db_name)
+    for table_name in table_names:
+        gm.updateCouch(table_name)
